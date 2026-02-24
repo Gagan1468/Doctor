@@ -1,0 +1,1202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>MedBrief — AI Pre-Screening</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;1,300&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #0a0f0d;
+    --surface: #111a15;
+    --surface2: #162019;
+    --border: #1e2e22;
+    --accent: #00e57a;
+    --accent2: #00b85e;
+    --accent-dim: rgba(0,229,122,0.08);
+    --accent-glow: rgba(0,229,122,0.15);
+    --text: #e8f0ea;
+    --text-dim: #7a9882;
+    --text-muted: #3d5442;
+    --red: #ff4d6d;
+    --yellow: #ffd166;
+    --blue: #4fc3f7;
+    --radius: 14px;
+    --radius-sm: 8px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Animated background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,122,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,122,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    top: -200px; right: -200px;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(0,229,122,0.06) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+    animation: pulse-bg 8s ease-in-out infinite alternate;
+  }
+
+  @keyframes pulse-bg {
+    from { transform: scale(1); opacity: 0.6; }
+    to { transform: scale(1.2); opacity: 1; }
+  }
+
+  /* ─── HEADER ─── */
+  header {
+    position: relative; z-index: 10;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 24px 48px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(10,15,13,0.8);
+    backdrop-filter: blur(20px);
+    animation: slideDown 0.6s ease both;
+  }
+
+  @keyframes slideDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+  .logo {
+    display: flex; align-items: center; gap: 12px;
+    text-decoration: none;
+  }
+  .logo-icon {
+    width: 38px; height: 38px;
+    background: var(--accent);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    box-shadow: 0 0 20px rgba(0,229,122,0.4);
+    animation: glow-pulse 3s ease-in-out infinite;
+  }
+  @keyframes glow-pulse {
+    0%,100% { box-shadow: 0 0 20px rgba(0,229,122,0.4); }
+    50% { box-shadow: 0 0 35px rgba(0,229,122,0.7); }
+  }
+  .logo-text { font-size: 22px; font-weight: 800; color: var(--text); letter-spacing: -0.5px; }
+  .logo-text span { color: var(--accent); }
+
+  .header-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    background: var(--accent-dim);
+    border: 1px solid rgba(0,229,122,0.2);
+    padding: 6px 14px;
+    border-radius: 100px;
+    letter-spacing: 0.5px;
+    animation: fadeIn 1s ease 0.3s both;
+  }
+
+  /* ─── HERO ─── */
+  .hero {
+    position: relative; z-index: 5;
+    text-align: center;
+    padding: 80px 48px 60px;
+    animation: fadeUp 0.8s ease 0.2s both;
+  }
+  @keyframes fadeUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  .hero-eyebrow {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    display: inline-block;
+  }
+
+  .hero h1 {
+    font-size: clamp(36px, 5vw, 64px);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -2px;
+    margin-bottom: 20px;
+  }
+
+  .hero h1 em {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    color: var(--accent);
+    font-weight: 400;
+  }
+
+  .hero p {
+    font-size: 17px;
+    color: var(--text-dim);
+    max-width: 520px;
+    margin: 0 auto 40px;
+    line-height: 1.7;
+    font-weight: 400;
+  }
+
+  /* ─── STATS BAR ─── */
+  .stats-bar {
+    position: relative; z-index: 5;
+    display: flex; justify-content: center; gap: 0;
+    margin: 0 48px 60px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    animation: fadeUp 0.8s ease 0.4s both;
+  }
+
+  .stat {
+    flex: 1;
+    padding: 24px 20px;
+    text-align: center;
+    border-right: 1px solid var(--border);
+    background: var(--surface);
+    transition: background 0.3s;
+  }
+  .stat:last-child { border-right: none; }
+  .stat:hover { background: var(--surface2); }
+
+  .stat-num {
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--accent);
+    letter-spacing: -1px;
+    display: block;
+    margin-bottom: 4px;
+  }
+  .stat-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  /* ─── MAIN LAYOUT ─── */
+  .main {
+    position: relative; z-index: 5;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    padding: 0 48px 60px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  /* ─── FORM PANEL ─── */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 36px;
+    animation: fadeUp 0.8s ease 0.5s both;
+  }
+
+  .panel-header {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 28px;
+  }
+  .panel-icon {
+    width: 36px; height: 36px;
+    border-radius: var(--radius-sm);
+    background: var(--accent-dim);
+    border: 1px solid rgba(0,229,122,0.2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+  .panel-title { font-size: 16px; font-weight: 700; letter-spacing: -0.3px; }
+  .panel-sub { font-size: 12px; color: var(--text-dim); font-weight: 400; margin-top: 1px; }
+
+  .form-group { margin-bottom: 20px; }
+
+  label {
+    display: block;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+  }
+
+  input[type=text], input[type=number], select, textarea {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    padding: 12px 16px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    appearance: none;
+  }
+
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--accent2);
+    box-shadow: 0 0 0 3px rgba(0,229,122,0.1);
+  }
+
+  textarea { resize: vertical; min-height: 100px; line-height: 1.6; }
+
+  select option { background: var(--surface); }
+
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+  /* Symptom tags */
+  .symptom-tags {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    margin-top: 10px;
+  }
+
+  .tag {
+    padding: 6px 14px;
+    border-radius: 100px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text-dim);
+    transition: all 0.2s;
+    user-select: none;
+  }
+  .tag:hover { border-color: var(--accent2); color: var(--accent); }
+  .tag.active {
+    background: var(--accent-dim);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* Severity slider */
+  .severity-track {
+    display: flex; gap: 4px; margin-top: 8px;
+  }
+  .severity-dot {
+    flex: 1; height: 6px; border-radius: 3px;
+    background: var(--border); cursor: pointer;
+    transition: background 0.2s;
+  }
+  .severity-dot.lit-green { background: var(--accent); }
+  .severity-dot.lit-yellow { background: var(--yellow); }
+  .severity-dot.lit-red { background: var(--red); }
+
+  .severity-labels {
+    display: flex; justify-content: space-between;
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    color: var(--text-muted);
+    letter-spacing: 0.5px;
+    margin-top: 4px;
+  }
+
+  /* Lab upload */
+  .upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius-sm);
+    padding: 28px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: var(--bg);
+  }
+  .upload-zone:hover {
+    border-color: var(--accent2);
+    background: var(--accent-dim);
+  }
+  .upload-zone.has-file {
+    border-color: var(--accent);
+    background: var(--accent-dim);
+  }
+  .upload-icon { font-size: 28px; margin-bottom: 8px; }
+  .upload-text { font-size: 13px; color: var(--text-dim); }
+  .upload-text strong { color: var(--accent); }
+  .upload-hint { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text-muted); margin-top: 4px; }
+
+  /* CTA Button */
+  .btn-generate {
+    width: 100%;
+    padding: 16px;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-generate::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.4s;
+  }
+  .btn-generate:hover::before { left: 100%; }
+  .btn-generate:hover {
+    background: #00ff87;
+    box-shadow: 0 8px 24px rgba(0,229,122,0.4);
+    transform: translateY(-1px);
+  }
+  .btn-generate:active { transform: translateY(0); }
+  .btn-generate:disabled {
+    opacity: 0.5; cursor: not-allowed;
+    transform: none; box-shadow: none;
+  }
+
+  /* ─── RESULT PANEL ─── */
+  .result-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    animation: fadeUp 0.8s ease 0.6s both;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .result-panel-header {
+    padding: 24px 36px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+
+  .result-status {
+    display: flex; align-items: center; gap: 10px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 1px;
+  }
+  .status-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--text-muted);
+  }
+  .status-dot.active {
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+    animation: blink 1.5s ease-in-out infinite;
+  }
+  .status-dot.done { background: var(--accent); box-shadow: 0 0 8px var(--accent); animation: none; }
+  @keyframes blink { 0%,100%{ opacity:1; } 50%{ opacity:0.3; } }
+
+  .result-body {
+    flex: 1;
+    padding: 32px 36px;
+    overflow-y: auto;
+    max-height: 700px;
+  }
+
+  /* Empty state */
+  .empty-state {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; height: 100%; min-height: 400px;
+    text-align: center; gap: 16px;
+  }
+  .empty-icon { font-size: 48px; opacity: 0.3; }
+  .empty-title { font-size: 18px; font-weight: 700; color: var(--text-muted); }
+  .empty-sub { font-size: 13px; color: var(--text-muted); line-height: 1.6; max-width: 280px; }
+
+  /* Loading */
+  .loading-state { display: none; flex-direction: column; align-items: center; justify-content: center; min-height: 400px; gap: 24px; }
+  .loading-ring {
+    width: 60px; height: 60px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text-dim); letter-spacing: 1px; }
+  .loading-steps { list-style: none; display: flex; flex-direction: column; gap: 8px; text-align: left; }
+  .loading-steps li {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+    padding-left: 20px;
+    position: relative;
+    transition: color 0.3s;
+  }
+  .loading-steps li::before { content: '○'; position: absolute; left: 0; }
+  .loading-steps li.done { color: var(--accent); }
+  .loading-steps li.done::before { content: '✓'; }
+  .loading-steps li.active { color: var(--text); }
+  .loading-steps li.active::before { content: '◉'; color: var(--accent); }
+
+  /* Brief output */
+  .brief { display: none; }
+
+  .brief-section {
+    margin-bottom: 28px;
+    padding-bottom: 28px;
+    border-bottom: 1px solid var(--border);
+  }
+  .brief-section:last-child { border-bottom: none; margin-bottom: 0; }
+
+  .section-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+  }
+
+  .section-title {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    color: var(--text);
+    letter-spacing: -0.3px;
+  }
+
+  .patient-card {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+  .patient-field {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+  }
+  .field-key {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .field-val { font-size: 14px; font-weight: 600; color: var(--text); }
+
+  /* Risk badge */
+  .risk-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 18px;
+    border-radius: 100px;
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    letter-spacing: -0.2px;
+  }
+  .risk-low { background: rgba(0,229,122,0.12); color: var(--accent); border: 1px solid rgba(0,229,122,0.3); }
+  .risk-medium { background: rgba(255,209,102,0.1); color: var(--yellow); border: 1px solid rgba(255,209,102,0.3); }
+  .risk-high { background: rgba(255,77,109,0.1); color: var(--red); border: 1px solid rgba(255,77,109,0.3); }
+
+  .symptom-list { display: flex; flex-direction: column; gap: 8px; }
+  .symptom-item {
+    display: flex; align-items: flex-start; gap: 12px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 16px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .symptom-item-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+
+  .question-list { display: flex; flex-direction: column; gap: 8px; }
+  .question-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.5;
+    padding: 10px 14px;
+    background: var(--bg);
+    border-radius: var(--radius-sm);
+    border-left: 2px solid var(--accent2);
+  }
+  .q-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--accent);
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .concern-item {
+    display: flex; gap: 10px; align-items: flex-start;
+    font-size: 13px; color: var(--text-dim);
+    line-height: 1.5; padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .concern-item:last-child { border-bottom: none; }
+  .concern-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+
+  .time-saved {
+    background: linear-gradient(135deg, rgba(0,229,122,0.05), rgba(0,229,122,0.12));
+    border: 1px solid rgba(0,229,122,0.2);
+    border-radius: var(--radius-sm);
+    padding: 18px 20px;
+    display: flex; align-items: center; gap: 16px;
+  }
+  .time-saved-num {
+    font-size: 36px; font-weight: 800;
+    color: var(--accent);
+    letter-spacing: -2px;
+    flex-shrink: 0;
+  }
+  .time-saved-label { font-size: 13px; color: var(--text-dim); line-height: 1.5; }
+  .time-saved-label strong { color: var(--text); display: block; font-size: 14px; margin-bottom: 2px; }
+
+  /* Print button */
+  .btn-print {
+    padding: 10px 20px;
+    background: var(--accent-dim);
+    border: 1px solid rgba(0,229,122,0.2);
+    border-radius: var(--radius-sm);
+    color: var(--accent);
+    font-family: 'Syne', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: -0.2px;
+  }
+  .btn-print:hover { background: rgba(0,229,122,0.15); border-color: var(--accent); }
+
+  /* ─── BOTTOM HOW IT WORKS ─── */
+  .how-it-works {
+    position: relative; z-index: 5;
+    padding: 0 48px 80px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .section-header {
+    display: flex; align-items: baseline; gap: 20px;
+    margin-bottom: 24px;
+  }
+  .section-header h2 { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; }
+  .section-header span {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+  }
+
+  .steps-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+
+  .step-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s, transform 0.3s;
+  }
+  .step-card:hover {
+    border-color: rgba(0,229,122,0.3);
+    transform: translateY(-3px);
+  }
+  .step-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .step-card:hover::before { opacity: 1; }
+
+  .step-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--accent);
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+  }
+  .step-icon { font-size: 24px; margin-bottom: 12px; }
+  .step-title { font-size: 14px; font-weight: 700; margin-bottom: 8px; letter-spacing: -0.2px; }
+  .step-desc { font-size: 12px; color: var(--text-dim); line-height: 1.6; }
+
+  /* ─── RESPONSIVE ─── */
+  @media (max-width: 900px) {
+    header { padding: 20px 24px; }
+    .hero { padding: 60px 24px 40px; }
+    .stats-bar { margin: 0 24px 40px; }
+    .main { grid-template-columns: 1fr; padding: 0 24px 40px; }
+    .how-it-works { padding: 0 24px 60px; }
+    .steps-grid { grid-template-columns: 1fr 1fr; }
+    .patient-card { grid-template-columns: 1fr 1fr; }
+  }
+
+  @media (max-width: 600px) {
+    .stats-bar { flex-direction: column; }
+    .stat { border-right: none; border-bottom: 1px solid var(--border); }
+    .steps-grid { grid-template-columns: 1fr; }
+    .form-row { grid-template-columns: 1fr; }
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+  /* Print */
+  @media print {
+    body { background: white; color: black; }
+    body::before, body::after { display: none; }
+    header, .hero, .stats-bar, .form-panel, .how-it-works { display: none; }
+    .main { grid-template-columns: 1fr; }
+    .result-panel { border: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <a class="logo" href="#">
+    <div class="logo-icon">⚕</div>
+    <div>
+      <div class="logo-text">Med<span>Brief</span></div>
+    </div>
+  </a>
+  <div class="header-badge">AI PRE-SCREENING v1.0</div>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-eyebrow">Second Opinion as a Service</div>
+  <h1>Your doctor reads your<br><em>brief</em> in 30 seconds</h1>
+  <p>AI compiles your symptoms, history & labs into a structured report — so consultations start where they should: with solutions.</p>
+</section>
+
+<!-- STATS BAR -->
+<div class="stats-bar">
+  <div class="stat">
+    <span class="stat-num" data-target="60">0</span>%
+    <div class="stat-label">Doctor time on info gathering</div>
+  </div>
+  <div class="stat">
+    <span class="stat-num" data-target="30">0</span>s
+    <div class="stat-label">To read a MedBrief</div>
+  </div>
+  <div class="stat">
+    <span class="stat-num" data-target="3">0</span>x
+    <div class="stat-label">More efficient consultations</div>
+  </div>
+  <div class="stat">
+    <span class="stat-num" data-target="94">0</span>%
+    <div class="stat-label">Patient satisfaction score</div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div class="main">
+
+  <!-- FORM PANEL -->
+  <div class="panel form-panel">
+    <div class="panel-header">
+      <div class="panel-icon">👤</div>
+      <div>
+        <div class="panel-title">Patient Intake</div>
+        <div class="panel-sub">Fill in your details before the appointment</div>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Full Name</label>
+        <input type="text" id="patientName" placeholder="e.g. Ravi Sharma"/>
+      </div>
+      <div class="form-group">
+        <label>Date of Birth</label>
+        <input type="text" id="patientDob" placeholder="e.g. 14 Mar 1990"/>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Age</label>
+        <input type="number" id="patientAge" placeholder="33" min="1" max="120"/>
+      </div>
+      <div class="form-group">
+        <label>Biological Sex</label>
+        <select id="patientSex">
+          <option value="">Select</option>
+          <option>Male</option>
+          <option>Female</option>
+          <option>Prefer not to say</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Select Symptoms (tap to add)</label>
+      <div class="symptom-tags" id="symptomTags">
+        <span class="tag" data-val="Headache">🤕 Headache</span>
+        <span class="tag" data-val="Fever">🌡 Fever</span>
+        <span class="tag" data-val="Fatigue">😴 Fatigue</span>
+        <span class="tag" data-val="Chest Pain">💔 Chest Pain</span>
+        <span class="tag" data-val="Shortness of Breath">🌬 Shortness of Breath</span>
+        <span class="tag" data-val="Nausea">🤢 Nausea</span>
+        <span class="tag" data-val="Cough">😮‍💨 Cough</span>
+        <span class="tag" data-val="Joint Pain">🦴 Joint Pain</span>
+        <span class="tag" data-val="Dizziness">😵 Dizziness</span>
+        <span class="tag" data-val="Rash">🔴 Rash</span>
+        <span class="tag" data-val="Abdominal Pain">🫁 Abdominal Pain</span>
+        <span class="tag" data-val="Insomnia">🌙 Insomnia</span>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Additional symptoms or description</label>
+      <textarea id="symptomsText" placeholder="Describe how you feel, when it started, what makes it better or worse..."></textarea>
+    </div>
+
+    <div class="form-group">
+      <label>Pain / Severity Level</label>
+      <div class="severity-track" id="severityTrack">
+        <div class="severity-dot" data-val="1"></div>
+        <div class="severity-dot" data-val="2"></div>
+        <div class="severity-dot" data-val="3"></div>
+        <div class="severity-dot" data-val="4"></div>
+        <div class="severity-dot" data-val="5"></div>
+        <div class="severity-dot" data-val="6"></div>
+        <div class="severity-dot" data-val="7"></div>
+        <div class="severity-dot" data-val="8"></div>
+        <div class="severity-dot" data-val="9"></div>
+        <div class="severity-dot" data-val="10"></div>
+      </div>
+      <div class="severity-labels"><span>Mild (1)</span><span id="severityLabel">Not selected</span><span>Severe (10)</span></div>
+    </div>
+
+    <div class="form-group">
+      <label>Medical History & Conditions</label>
+      <textarea id="medHistory" placeholder="e.g. Type 2 Diabetes (diagnosed 2019), Hypertension, Asthma..."></textarea>
+    </div>
+
+    <div class="form-group">
+      <label>Current Medications</label>
+      <input type="text" id="medications" placeholder="e.g. Metformin 500mg, Amlodipine 5mg"/>
+    </div>
+
+    <div class="form-group">
+      <label>Known Allergies</label>
+      <input type="text" id="allergies" placeholder="e.g. Penicillin, Sulfa drugs, Latex"/>
+    </div>
+
+    <div class="form-group">
+      <label>Recent Lab Results (optional)</label>
+      <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+        <div class="upload-icon">📋</div>
+        <div class="upload-text"><strong>Click to upload</strong> or drag & drop</div>
+        <div class="upload-hint">PDF, JPG, PNG — max 10MB</div>
+      </div>
+      <input type="file" id="fileInput" style="display:none" accept=".pdf,.jpg,.jpeg,.png" onchange="handleFile(this)"/>
+    </div>
+
+    <div class="form-group">
+      <label>Reason for Visit</label>
+      <textarea id="visitReason" placeholder="What do you most want your doctor to help with today?"></textarea>
+    </div>
+
+    <button class="btn-generate" id="generateBtn" onclick="generateBrief()">
+      ⚡ Generate Doctor Brief
+    </button>
+  </div>
+
+  <!-- RESULT PANEL -->
+  <div class="result-panel">
+    <div class="result-panel-header">
+      <div>
+        <div class="panel-title">Doctor Brief</div>
+        <div class="panel-sub">Structured pre-consultation summary</div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center">
+        <div class="result-status">
+          <div class="status-dot" id="statusDot"></div>
+          <span id="statusText" style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted)">AWAITING INPUT</span>
+        </div>
+        <button class="btn-print" onclick="window.print()" id="printBtn" style="display:none">🖨 Print</button>
+      </div>
+    </div>
+
+    <div class="result-body">
+
+      <!-- Empty state -->
+      <div class="empty-state" id="emptyState">
+        <div class="empty-icon">📄</div>
+        <div class="empty-title">No brief generated yet</div>
+        <div class="empty-sub">Fill in the patient form and click "Generate Doctor Brief" to create a structured summary.</div>
+      </div>
+
+      <!-- Loading state -->
+      <div class="loading-state" id="loadingState">
+        <div class="loading-ring"></div>
+        <ul class="loading-steps" id="loadingSteps">
+          <li id="step1">Parsing patient profile</li>
+          <li id="step2">Analyzing symptoms & severity</li>
+          <li id="step3">Cross-referencing medical history</li>
+          <li id="step4">Identifying risk factors</li>
+          <li id="step5">Generating doctor questions</li>
+          <li id="step6">Compiling brief</li>
+        </ul>
+      </div>
+
+      <!-- Brief output -->
+      <div class="brief" id="briefOutput"></div>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- HOW IT WORKS -->
+<div class="how-it-works">
+  <div class="section-header">
+    <h2>How MedBrief Works</h2>
+    <span>THE PROCESS</span>
+  </div>
+  <div class="steps-grid">
+    <div class="step-card">
+      <div class="step-num">01 — PATIENT</div>
+      <div class="step-icon">📝</div>
+      <div class="step-title">Fill Intake Form</div>
+      <div class="step-desc">Patient enters symptoms, history, medications, and lab results before the appointment — from home.</div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">02 — AI</div>
+      <div class="step-icon">🧠</div>
+      <div class="step-title">AI Analysis</div>
+      <div class="step-desc">Our model analyzes all inputs, cross-references patterns, flags risks, and structures a clinical summary.</div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">03 — DOCTOR</div>
+      <div class="step-icon">⚕️</div>
+      <div class="step-title">30-Second Read</div>
+      <div class="step-desc">The doctor receives a concise, structured brief. No info gathering needed — they start with diagnosis, not questions.</div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">04 — OUTCOME</div>
+      <div class="step-icon">✅</div>
+      <div class="step-title">Better Consultation</div>
+      <div class="step-desc">More time for actual care. Better follow-ups. Higher patient satisfaction. Doctors see 3x more patients.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── State ──
+  let severity = 0;
+  let selectedSymptoms = [];
+  let uploadedFileName = '';
+
+  // ── Symptom Tags ──
+  document.querySelectorAll('.tag').forEach(tag => {
+    tag.addEventListener('click', () => {
+      tag.classList.toggle('active');
+      const val = tag.dataset.val;
+      if (tag.classList.contains('active')) {
+        selectedSymptoms.push(val);
+      } else {
+        selectedSymptoms = selectedSymptoms.filter(s => s !== val);
+      }
+    });
+  });
+
+  // ── Severity ──
+  const dots = document.querySelectorAll('.severity-dot');
+  dots.forEach(dot => {
+    dot.addEventListener('click', () => {
+      severity = parseInt(dot.dataset.val);
+      updateSeverityUI();
+    });
+  });
+
+  function updateSeverityUI() {
+    const label = document.getElementById('severityLabel');
+    label.textContent = severity === 0 ? 'Not selected' : `Level ${severity}/10`;
+    dots.forEach(dot => {
+      const v = parseInt(dot.dataset.val);
+      dot.className = 'severity-dot';
+      if (v <= severity) {
+        if (severity <= 3) dot.classList.add('lit-green');
+        else if (severity <= 6) dot.classList.add('lit-yellow');
+        else dot.classList.add('lit-red');
+      }
+    });
+  }
+
+  // ── File Upload ──
+  function handleFile(input) {
+    if (input.files && input.files[0]) {
+      uploadedFileName = input.files[0].name;
+      const zone = document.getElementById('uploadZone');
+      zone.classList.add('has-file');
+      zone.innerHTML = `<div class="upload-icon">✅</div><div class="upload-text"><strong>${uploadedFileName}</strong></div><div class="upload-hint">Click to change file</div>`;
+    }
+  }
+
+  const uploadZone = document.getElementById('uploadZone');
+  uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.style.borderColor = 'var(--accent)'; });
+  uploadZone.addEventListener('dragleave', () => { uploadZone.style.borderColor = ''; });
+  uploadZone.addEventListener('drop', e => {
+    e.preventDefault();
+    uploadZone.style.borderColor = '';
+    const file = e.dataTransfer.files[0];
+    if (file) { uploadedFileName = file.name; uploadZone.classList.add('has-file'); uploadZone.innerHTML = `<div class="upload-icon">✅</div><div class="upload-text"><strong>${file.name}</strong></div><div class="upload-hint">Drop new file to replace</div>`; }
+  });
+
+  // ── Counter animation ──
+  function animateCounter(el, target, suffix) {
+    let start = 0;
+    const duration = 1500;
+    const step = target / (duration / 16);
+    const timer = setInterval(() => {
+      start = Math.min(start + step, target);
+      el.textContent = Math.round(start);
+      if (start >= target) { el.textContent = target; clearInterval(timer); }
+    }, 16);
+  }
+
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        document.querySelectorAll('[data-target]').forEach(el => {
+          animateCounter(el, parseInt(el.dataset.target));
+        });
+        observer.disconnect();
+      }
+    });
+  });
+  observer.observe(document.querySelector('.stats-bar'));
+
+  // ── Generate Brief ──
+  function generateBrief() {
+    const name = document.getElementById('patientName').value.trim() || 'Anonymous Patient';
+    const age = document.getElementById('patientAge').value || '—';
+    const sex = document.getElementById('patientSex').value || '—';
+    const dob = document.getElementById('patientDob').value || '—';
+    const medications = document.getElementById('medications').value.trim() || 'None reported';
+    const allergies = document.getElementById('allergies').value.trim() || 'NKDA';
+    const medHistory = document.getElementById('medHistory').value.trim() || 'No significant history reported';
+    const visitReason = document.getElementById('visitReason').value.trim() || 'General consultation';
+    const extraSymptoms = document.getElementById('symptomsText').value.trim();
+
+    const allSymptoms = [...selectedSymptoms];
+    if (extraSymptoms) allSymptoms.push(extraSymptoms);
+
+    if (allSymptoms.length === 0 && !extraSymptoms) {
+      alert('Please add at least one symptom before generating a brief.');
+      return;
+    }
+
+    // UI state: loading
+    document.getElementById('emptyState').style.display = 'none';
+    document.getElementById('briefOutput').style.display = 'none';
+    document.getElementById('loadingState').style.display = 'flex';
+    document.getElementById('statusDot').className = 'status-dot active';
+    document.getElementById('statusText').textContent = 'ANALYZING...';
+    document.getElementById('generateBtn').disabled = true;
+    document.getElementById('printBtn').style.display = 'none';
+
+    // Animate loading steps
+    const steps = ['step1','step2','step3','step4','step5','step6'];
+    let i = 0;
+    steps.forEach(s => { document.getElementById(s).className = ''; });
+
+    const stepTimer = setInterval(() => {
+      if (i > 0) document.getElementById(steps[i-1]).className = 'done';
+      if (i < steps.length) {
+        document.getElementById(steps[i]).className = 'active';
+        i++;
+      } else {
+        clearInterval(stepTimer);
+      }
+    }, 420);
+
+    // Generate after delay
+    setTimeout(() => {
+      steps.forEach(s => { document.getElementById(s).className = 'done'; });
+      setTimeout(() => {
+        document.getElementById('loadingState').style.display = 'none';
+        renderBrief({ name, age, sex, dob, medications, allergies, medHistory, visitReason, allSymptoms });
+        document.getElementById('statusDot').className = 'status-dot done';
+        document.getElementById('statusText').textContent = 'READY';
+        document.getElementById('generateBtn').disabled = false;
+        document.getElementById('printBtn').style.display = 'block';
+      }, 500);
+    }, steps.length * 420 + 400);
+  }
+
+  function getRiskLevel(symptoms, severity) {
+    const highRiskSymptoms = ['Chest Pain', 'Shortness of Breath'];
+    const hasHighRisk = symptoms.some(s => highRiskSymptoms.includes(s));
+    if (hasHighRisk || severity >= 8) return 'high';
+    if (severity >= 5 || symptoms.length >= 4) return 'medium';
+    return 'low';
+  }
+
+  function generateQuestions(symptoms, medHistory, sex, age) {
+    const qs = [];
+    if (symptoms.includes('Chest Pain')) qs.push('Is the chest pain radiating to your left arm, jaw, or back?');
+    if (symptoms.includes('Headache')) qs.push('Is this a new type of headache, or does it differ from past headaches?');
+    if (symptoms.includes('Fatigue')) qs.push('Has fatigue affected your ability to perform daily activities?');
+    if (symptoms.includes('Fever')) qs.push('What is the highest temperature recorded, and for how long?');
+    if (symptoms.includes('Shortness of Breath')) qs.push('Does breathlessness occur at rest or only with exertion?');
+    if (symptoms.includes('Nausea')) qs.push('Is nausea accompanied by vomiting or blood?');
+    if (symptoms.includes('Dizziness')) qs.push('Is dizziness positional (worse lying down/standing up)?');
+    if (medHistory.toLowerCase().includes('diabetes')) qs.push('What were recent fasting blood glucose readings?');
+    if (medHistory.toLowerCase().includes('hypertension') || medHistory.toLowerCase().includes('blood pressure')) qs.push('Has the patient been monitoring BP at home? What are typical readings?');
+    if (parseInt(age) > 45 && (symptoms.includes('Chest Pain') || symptoms.includes('Fatigue'))) qs.push('Family history of cardiac events before age 55?');
+    // Generic fallback
+    if (qs.length < 3) {
+      qs.push('When did the symptoms first appear, and have they been getting worse?');
+      qs.push('Have you recently traveled or been exposed to someone who was ill?');
+      qs.push('Has anything made the symptoms better or worse?');
+    }
+    return qs.slice(0, 5);
+  }
+
+  function generateConcerns(symptoms, medHistory, severity) {
+    const concerns = [];
+    if (symptoms.includes('Chest Pain') && symptoms.includes('Shortness of Breath')) {
+      concerns.push({ color: 'var(--red)', text: 'Cardiopulmonary involvement: co-occurrence of chest pain and dyspnea warrants ECG and troponin evaluation.' });
+    }
+    if (severity >= 8) concerns.push({ color: 'var(--red)', text: 'High self-reported severity score ('+severity+'/10) — consider priority triage.' });
+    if (symptoms.includes('Fever') && symptoms.includes('Rash')) concerns.push({ color: 'var(--yellow)', text: 'Fever + rash pattern: consider viral exanthem, allergic reaction, or autoimmune flare.' });
+    if (medHistory.toLowerCase().includes('diabetes') && symptoms.includes('Fatigue')) concerns.push({ color: 'var(--yellow)', text: 'Fatigue in diabetic patient: rule out hypoglycemia, nephropathy, or thyroid dysfunction.' });
+    if (symptoms.includes('Dizziness') && symptoms.includes('Headache')) concerns.push({ color: 'var(--yellow)', text: 'Dizziness + headache: consider BP evaluation, vestibular disorder, or migraine workup.' });
+    if (concerns.length === 0) concerns.push({ color: 'var(--accent)', text: 'No immediate red flags identified. Presentation appears stable for routine workup.' });
+    return concerns;
+  }
+
+  function renderBrief({ name, age, sex, dob, medications, allergies, medHistory, visitReason, allSymptoms }) {
+    const riskLevel = getRiskLevel(allSymptoms, severity);
+    const riskLabel = { low: '🟢 Low Risk', medium: '🟡 Moderate Risk', high: '🔴 High Priority' }[riskLevel];
+    const riskClass = { low: 'risk-low', medium: 'risk-medium', high: 'risk-high' }[riskLevel];
+    const questions = generateQuestions(allSymptoms, medHistory, sex, age);
+    const concerns = generateConcerns(allSymptoms, medHistory, severity);
+    const now = new Date();
+    const timestamp = now.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+    const timeSaved = Math.max(4, Math.min(12, 4 + allSymptoms.length));
+
+    const symptomsHTML = allSymptoms.map(s => `
+      <div class="symptom-item">
+        <span class="symptom-item-icon">•</span>
+        <span>${s}${severity > 0 && selectedSymptoms.includes(s) ? ` <span style="color:var(--text-muted);font-size:11px;font-family:'DM Mono',monospace">(severity ${severity}/10)</span>` : ''}</span>
+      </div>`).join('');
+
+    const questionsHTML = questions.map((q, i) => `
+      <div class="question-item">
+        <span class="q-num">Q${i+1}</span>
+        <span>${q}</span>
+      </div>`).join('');
+
+    const concernsHTML = concerns.map(c => `
+      <div class="concern-item">
+        <div class="concern-dot" style="background:${c.color}"></div>
+        <span>${c.text}</span>
+      </div>`).join('');
+
+    const uploadNote = uploadedFileName
+      ? `<div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--accent);background:var(--accent-dim);border:1px solid rgba(0,229,122,0.2);border-radius:6px;padding:8px 12px;margin-top:8px;">📎 Lab file attached: ${uploadedFileName}</div>`
+      : `<div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);">No lab files uploaded</div>`;
+
+    document.getElementById('briefOutput').innerHTML = `
+      <div class="brief-section">
+        <div class="section-label">Generated ${timestamp}</div>
+        <div class="section-title">Patient Profile</div>
+        <div class="patient-card">
+          <div class="patient-field"><div class="field-key">Name</div><div class="field-val">${name}</div></div>
+          <div class="patient-field"><div class="field-key">Age</div><div class="field-val">${age}</div></div>
+          <div class="patient-field"><div class="field-key">Sex</div><div class="field-val">${sex}</div></div>
+          <div class="patient-field"><div class="field-key">DOB</div><div class="field-val">${dob}</div></div>
+          <div class="patient-field"><div class="field-key">Allergies</div><div class="field-val" style="color:${allergies==='NKDA'?'var(--accent)':'var(--red)'}">${allergies}</div></div>
+          <div class="patient-field"><div class="field-key">Medications</div><div class="field-val" style="font-size:12px">${medications}</div></div>
+        </div>
+      </div>
+
+      <div class="brief-section">
+        <div class="section-label">Risk Assessment</div>
+        <div class="risk-badge ${riskClass}">${riskLabel}</div>
+        <div style="font-size:13px;color:var(--text-dim);line-height:1.6">Based on ${allSymptoms.length} reported symptom${allSymptoms.length!==1?'s':''}, severity score of <strong style="color:var(--text)">${severity||'not rated'}/10</strong>, and existing medical history.</div>
+      </div>
+
+      <div class="brief-section">
+        <div class="section-label">Chief Complaint</div>
+        <div class="section-title">"${visitReason}"</div>
+      </div>
+
+      <div class="brief-section">
+        <div class="section-label">Presenting Symptoms (${allSymptoms.length})</div>
+        <div class="symptom-list">${symptomsHTML}</div>
+      </div>
+
+      <div class="brief-section">
+        <div class="section-label">Medical History</div>
+        <div style="font-size:14px;color:var(--text-dim);line-height:1.7;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px">${medHistory}</div>
+      </div>
+
+      <div class="brief-section">
+        <div class="section-label">Lab Results / Files</div>
+        ${uploadNote}
+      </div>
+
+      <div class="brief-section">
+        <div class="section-label">AI-Flagged Clinical Concerns</div>
+        <div>${concernsHTML}</div>
+      </div>
+
+      <div class="brief-section">
+        <div class="section-label">Suggested Doctor Questions</div>
+        <div class="question-list">${questionsHTML}</div>
+      </div>
+
+      <div class="brief-section">
+        <div class="time-saved">
+          <div class="time-saved-num">~${timeSaved}m</div>
+          <div class="time-saved-label">
+            <strong>Estimated Time Saved</strong>
+            This brief compressed ${timeSaved} minutes of information gathering into a 30-second read. Your consultation can start with solutions.
+          </div>
+        </div>
+      </div>
+
+      <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text-muted);line-height:1.6;padding-top:8px;border-top:1px solid var(--border)">
+        ⚠ MedBrief is an AI-generated pre-screening aid. It does not constitute medical advice. All clinical decisions remain with the attending physician. Generated by MedBrief AI v1.0.
+      </div>
+    `;
+
+    document.getElementById('briefOutput').style.display = 'block';
+    document.getElementById('briefOutput').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+</script>
+</body>
+</html>
